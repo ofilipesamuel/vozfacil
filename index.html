@@ -917,29 +917,26 @@ function falarDestino(texto) {
 }
 
 /* ── ABRIR APP ── */
-function abrirApp(enderecoParam) {
-  const end = enderecoParam || destino;
-  if (!end) return;
-  const encoded = encodeURIComponent(end);
-
-  if (appAtual === 'uber' || appFav === 'uber') {
+function abrirComApp(endereco, app) {
+  if (!endereco) return;
+  const encoded = encodeURIComponent(endereco);
+  if (app === 'uber') {
     const deep = `uber://?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encoded}`;
     const web = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encoded}`;
     const t = Date.now();
     window.location.href = deep;
     setTimeout(() => { if (Date.now() - t < 2200) window.open(web, '_blank'); }, 1600);
   } else {
-    const web99 = `https://99app.com/link/destination?address=${encoded}`;
-    window.open(web99, '_blank');
+    window.open(`https://99app.com/link/destination?address=${encoded}`, '_blank');
   }
 }
 
+function abrirApp() {
+  abrirComApp(destino, appAtual);
+}
+
 function abrirAppFavorito(endereco) {
-  const appParaUsar = appFav;
-  const appAnterior = appAtual;
-  appAtual = appParaUsar;
-  abrirApp(endereco);
-  appAtual = appAnterior;
+  abrirComApp(endereco, appFav);
 }
 
 function limpar() {
@@ -977,14 +974,9 @@ function abrirFav(i) {
   if (isEditing) return;
   const f = favoritos[i];
   if (!f.endereco) { abrirModal(); return; }
-  mostrarDestino(f.endereco);
-  goTo('voz');
-  setTimeout(() => {
-    document.getElementById('btnChamar').disabled = false;
-    atualizarBotaoChamar();
-    falarDestino(f.endereco);
-  }, 100);
-  showToast('Indo para ' + f.nome + '...');
+  const appNome = appFav === 'uber' ? 'Uber' : '99';
+  showToast('Abrindo ' + appNome + ' para ' + f.nome + '...');
+  setTimeout(() => abrirComApp(f.endereco, appFav), 600);
 }
 
 function deletarFav(e, i) {
