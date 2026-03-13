@@ -337,9 +337,35 @@ auth.onAuthStateChanged(async user => {
   document.getElementById('authScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
 
-  // Busca familiaId
-  const userDoc = await db.collection('usuarios').doc(user.uid).get();
-  if (!userDoc.exists) { await sair(); return; }
+  // Busca ou cria documento do usuário
+  const userRef = db.collection('usuarios').doc(user.uid);
+  let userDoc = await userRef.get();
+
+  if (!userDoc.exists) {
+    // Documento sumiu ou cadastro incompleto — recria usando dados do Auth
+    familiaId = user.uid.slice(0, 12);
+    const nome = user.displayName || user.email.split('@')[0];
+    await userRef.set({ familiaId, nome, email: user.email });
+
+    // Garante que o doc da família existe
+    const famRef = db.collection('familias').doc(familiaId);
+    const famSnap = await famRef.get();
+    if (!famSnap.exists) {
+      await famRef.set({
+        familiar: { nome, email: user.email },
+        familiaId,
+        criadoEm: firebase.firestore.FieldValue.serverTimestamp(),
+        favoritos: [
+          {emoji:'🏥', nome:'Médico', endereco:'Hospital das Clínicas, São Paulo'},
+          {emoji:'🏠', nome:'Casa', endereco:''},
+          {emoji:'🛒', nome:'Mercado', endereco:''},
+        ],
+        wpp: { phone:'', key:'' }
+      });
+    }
+    userDoc = await userRef.get();
+  }
+
   const userData = userDoc.data();
   familiaId = userData.familiaId;
   famDocRef = db.collection('familias').doc(familiaId);
