@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>VozFácil — Transporte por Voz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --bg: #F5F0E8;
+  --surface: #FFFFFF;
+  --surface2: #FAF7F2;
+  --ink: #1A1410;
+  --ink2: #6B6560;
+  --ink3: #B0ABA4;
+  --green: #1A7A4A;
+  --green-light: #E8F5EE;
+  --green-mid: #2EAA68;
+  --blue: #1A4FA0;
+  --blue-light: #E8EEFA;
+  --red: #C0392B;
+  --red-light: #FDECEA;
+  --amber: #D4780A;
+  --amber-light: #FEF3E2;
+  --border: rgba(26,20,16,0.10);
+  --border2: rgba(26,20,16,0.18);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── SCREENS ── */
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  padding: 0 0 80px;
+  animation: fadeIn 0.22s ease;
+}
+.screen.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ── HEADER ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 12px;
+}
+.logo-mark {
+  font-family: 'Baloo 2', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.5px;
+}
+.logo-mark span { color: var(--green); }
+.header-sub {
+  font-size: 13px;
+  color: var(--ink2);
+  font-weight: 600;
+}
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 100;
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  gap: 4px;
+  transition: opacity 0.15s;
+}
+.nav-btn:active { opacity: 0.6; }
+.nav-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  transition: background 0.15s, transform 0.15s;
+}
+.nav-btn.active .nav-icon {
+  background: var(--green-light);
+  transform: scale(1.1);
+}
+.nav-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink3);
+  letter-spacing: 0.3px;
+}
+.nav-btn.active .nav-label { color: var(--green); }
+
+/* ══════════════════════════════
+   SCREEN 1 — VOZ
+══════════════════════════════ */
+.voice-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 20px 24px;
+}
+
+.app-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 28px;
+  background: var(--surface);
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+.app-pill {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--ink2);
+  background: transparent;
+}
+.app-pill.active-uber {
+  background: var(--ink);
+  color: #fff;
+}
+.app-pill.active-99 {
+  background: #FFDD00;
+  color: #1A1410;
+}
+
+/* Mic ring */
+.mic-ring {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  position: relative;
+  border: 3px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.mic-ring.listening {
+  border-color: var(--red);
+  box-shadow: 0 0 0 0 rgba(192,57,43,0.3);
+  animation: ripple 1.4s ease-out infinite;
+}
+.mic-ring.confirmed {
+  border-color: var(--green);
+  box-shadow: 0 0 0 12px rgba(26,122,74,0.08);
+}
+@keyframes ripple {
+  0%   { box-shadow: 0 0 0 0 rgba(192,57,43,0.35); }
+  70%  { box-shadow: 0 0 0 36px rgba(192,57,43,0); }
+  100% { box-shadow: 0 0 0 0 rgba(192,57,43,0); }
+}
+
+.mic-btn-inner {
+  width: 156px;
+  height: 156px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ink);
+  color: white;
+  font-size: 64px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.2s;
+  box-shadow: var(--shadow-lg);
+}
+.mic-btn-inner:active { transform: scale(0.93); }
+.mic-btn-inner.listening { background: var(--red); }
+.mic-btn-inner.confirmed { background: var(--green); }
+
+.mic-status {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: center;
+  min-height: 28px;
+  margin-bottom: 20px;
+}
+.mic-status.listening { color: var(--red); }
+.mic-status.confirmed { color: var(--green); }
+
+/* Destino box */
+.destino-box {
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  border: 2px solid var(--border);
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: border-color 0.2s;
+}
+.destino-box.has-text { border-color: var(--green); }
+.destino-icon { font-size: 24px; flex-shrink: 0; }
+.destino-text-wrap { flex: 1; }
+.destino-label { font-size: 12px; color: var(--ink3); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+.destino-value { font-size: 19px; font-weight: 700; color: var(--ink); }
+.destino-placeholder { font-size: 17px; color: var(--ink3); font-weight: 400; }
+
+/* Action buttons */
+.action-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+.btn-chamar {
+  flex: 1;
+  padding: 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-family: 'Nunito', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-chamar:active { transform: scale(0.97); }
+.btn-chamar:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn-chamar.uber { background: var(--ink); color: white; }
+.btn-chamar.noventa-e-nove { background: #FFDD00; color: var(--ink); }
+
+.btn-limpar {
+  padding: 20px 18px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border2);
+  background: transparent;
+  font-size: 22px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-limpar:active { background: var(--surface2); }
+
+/* Confirmação por voz */
+.confirm-bubble {
+  width: 100%;
+  background: var(--green-light);
+  border: 2px solid rgba(26,122,74,0.2);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: none;
+  align-items: flex-start;
+  gap: 10px;
+}
+.confirm-bubble.show { display: flex; }
+.confirm-bubble-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+.confirm-bubble-text { font-size: 15px; color: var(--green); font-weight: 600; line-height: 1.4; }
+
+/* No-support warning */
+.no-support-box {
+  width: 100%;
+  background: var(--amber-light);
+  border: 2px solid rgba(212,120,10,0.3);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--amber);
+  margin-bottom: 16px;
+  display: none;
+}
+
+/* ══════════════════════════════
+   SCREEN 2 — FAVORITOS
+══════════════════════════════ */
+.section-title {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 4px 20px 16px;
+}
+
+.fav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 20px;
+}
+
+.fav-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 2px solid var(--border);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  position: relative;
+  min-height: 140px;
+  justify-content: center;
+}
+.fav-card:active { transform: scale(0.96); }
+.fav-card:not(.add-card):hover { border-color: var(--green); box-shadow: var(--shadow); }
+.fav-card.add-card {
+  border-style: dashed;
+  background: var(--surface2);
+}
+.fav-emoji { font-size: 40px; }
+.fav-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+  line-height: 1.2;
+}
+.fav-addr {
+  font-size: 12px;
+  color: var(--ink2);
+  text-align: center;
+  line-height: 1.3;
+}
+.fav-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--red-light);
+  color: var(--red);
+  font-size: 14px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  line-height: 1;
+}
+.editing .fav-delete { display: flex; }
+.fav-card.add-card .fav-delete { display: none !important; }
+
+.edit-toggle {
+  margin: 0 20px 16px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border2);
+  background: transparent;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+  width: calc(100% - 40px);
+  text-align: center;
+}
+.edit-toggle.editing-mode { border-color: var(--red); color: var(--red); }
+
+/* App selector for favoritos */
+.fav-app-row {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px 16px;
+}
+.fav-app-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--ink2);
+}
+.fav-app-btn.active-uber { background: var(--ink); color: #fff; border-color: var(--ink); }
+.fav-app-btn.active-99 { background: #FFDD00; color: var(--ink); border-color: #FFDD00; }
+
+/* ══════════════════════════════
+   SCREEN 3 — AJUDA
+══════════════════════════════ */
+.help-list { padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+.help-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.help-step {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.help-body {}
+.help-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+.help-desc { font-size: 15px; color: var(--ink2); line-height: 1.5; }
+
+.help-tip-box {
+  margin: 12px 20px 0;
+  background: var(--amber-light);
+  border: 2px solid rgba(212,120,10,0.2);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+}
+.help-tip-title { font-size: 14px; font-weight: 800; color: var(--amber); margin-bottom: 6px; }
+.help-tip-text { font-size: 14px; color: var(--ink2); line-height: 1.5; }
+
+/* ══════════════════════════════
+   MODAL — Adicionar Favorito
+══════════════════════════════ */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  align-items: flex-end;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border-radius: 28px 28px 0 0;
+  padding: 24px 20px 40px;
+  animation: slideUp 0.25s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-title {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+.emoji-picker {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.emoji-opt {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 2px solid var(--border);
+  font-size: 28px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+  background: transparent;
+}
+.emoji-opt.selected { border-color: var(--green); background: var(--green-light); }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 13px; font-weight: 700; color: var(--ink2); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  font-family: 'Nunito', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--surface2);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--green); }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.btn-modal-cancel {
+  flex: 1;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border2);
+  background: transparent;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink2);
+  cursor: pointer;
+}
+.btn-modal-save {
+  flex: 2;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--green);
+  color: white;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-modal-save:hover { background: var(--green-mid); }
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 96px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--ink);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 40px;
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  white-space: nowrap;
+  z-index: 300;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ══ SCREEN: VOZ ══ -->
+<div class="screen active" id="screen-voz">
+  <div class="app-header">
+    <div class="logo-mark">Voz<span>Fácil</span></div>
+    <div class="header-sub">seu transporte por voz</div>
+  </div>
+
+  <div class="voice-hero">
+    <div class="no-support-box" id="noSupportBox">
+      ⚠️ Use o Chrome (Android) ou Safari (iPhone) para ativar o microfone
+    </div>
+
+    <!-- App selector -->
+    <div class="app-selector">
+      <button class="app-pill active-uber" id="pillUber" onclick="selecionarApp('uber')">🚗 Uber</button>
+      <button class="app-pill" id="pill99" onclick="selecionarApp('99')">🟡 99</button>
+    </div>
+
+    <!-- Mic -->
+    <div class="mic-ring" id="micRing">
+      <button class="mic-btn-inner" id="micBtn" onclick="toggleListen()">🎤</button>
+    </div>
+    <div class="mic-status" id="micStatus">Aperte para falar</div>
+
+    <!-- Destino -->
+    <div class="destino-box" id="destinoBox">
+      <span class="destino-icon">📍</span>
+      <div class="destino-text-wrap">
+        <div class="destino-label">Destino</div>
+        <div class="destino-placeholder" id="destinoPlaceholder">Diga para onde quer ir...</div>
+        <div class="destino-value" id="destinoValue" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Confirmação por voz -->
+    <div class="confirm-bubble" id="confirmBubble">
+      <span class="confirm-bubble-icon">🔊</span>
+      <div class="confirm-bubble-text" id="confirmText"></div>
+    </div>
+
+    <!-- Botões de ação -->
+    <div class="action-row">
+      <button class="btn-chamar uber" id="btnChamar" onclick="abrirApp()" disabled>
+        🚗 Chamar Uber
+      </button>
+      <button class="btn-limpar" onclick="limpar()" title="Apagar">🗑️</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCREEN: FAVORITOS ══ -->
+<div class="screen" id="screen-favoritos">
+  <div class="app-header">
+    <div class="logo-mark">Voz<span>Fácil</span></div>
+    <div class="header-sub">lugares favoritos</div>
+  </div>
+
+  <div class="fav-app-row">
+    <button class="fav-app-btn active-uber" id="favPillUber" onclick="selecionarAppFav('uber')">🚗 Uber</button>
+    <button class="fav-app-btn" id="favPill99" onclick="selecionarAppFav('99')">🟡 99</button>
+  </div>
+
+  <div class="section-title">Toque para ir direto</div>
+  <div class="fav-grid" id="favGrid"></div>
+
+  <br>
+  <button class="edit-toggle" id="editToggle" onclick="toggleEditing()">✏️ Editar favoritos</button>
+</div>
+
+<!-- ══ SCREEN: AJUDA ══ -->
+<div class="screen" id="screen-ajuda">
+  <div class="app-header">
+    <div class="logo-mark">Voz<span>Fácil</span></div>
+    <div class="header-sub">como usar</div>
+  </div>
+
+  <div class="help-list">
+    <div class="help-card">
+      <div class="help-step">1</div>
+      <div class="help-body">
+        <div class="help-title">Escolha o app</div>
+        <div class="help-desc">Na tela principal, toque em <strong>Uber</strong> ou <strong>99</strong> para escolher qual app vai abrir.</div>
+      </div>
+    </div>
+    <div class="help-card">
+      <div class="help-step">2</div>
+      <div class="help-body">
+        <div class="help-title">Aperte o botão grande</div>
+        <div class="help-desc">Toque no botão preto grande com o microfone 🎤. Ele vai ficar vermelho — isso significa que está ouvindo.</div>
+      </div>
+    </div>
+    <div class="help-card">
+      <div class="help-step">3</div>
+      <div class="help-body">
+        <div class="help-title">Fale o destino</div>
+        <div class="help-desc">Diga o endereço claramente, por exemplo:<br><em>"Rua das Flores 120, São Paulo"</em><br>ou simplesmente<br><em>"Hospital das Clínicas"</em></div>
+      </div>
+    </div>
+    <div class="help-card">
+      <div class="help-step">4</div>
+      <div class="help-body">
+        <div class="help-title">Confirme e chame</div>
+        <div class="help-desc">O app vai repetir o destino em voz alta. Se estiver certo, aperte <strong>Chamar Uber</strong> ou <strong>Chamar 99</strong>.</div>
+      </div>
+    </div>
+    <div class="help-card">
+      <div class="help-step">★</div>
+      <div class="help-body">
+        <div class="help-title">Use os favoritos</div>
+        <div class="help-desc">Na aba ⭐ Favoritos, salve os lugares que você vai sempre — médico, mercado, casa da família. Um toque e o app abre!</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="help-tip-box">
+    <div class="help-tip-title">💡 Dica</div>
+    <div class="help-tip-text">Se o microfone não funcionar, verifique se o Chrome ou Safari tem permissão para acessar o microfone nas configurações do celular.</div>
+  </div>
+</div>
+
+<!-- ══ NAV ══ -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-voz" onclick="goTo('voz')">
+    <div class="nav-icon">🎤</div>
+    <span class="nav-label">Chamar</span>
+  </button>
+  <button class="nav-btn" id="nav-favoritos" onclick="goTo('favoritos')">
+    <div class="nav-icon">⭐</div>
+    <span class="nav-label">Favoritos</span>
+  </button>
+  <button class="nav-btn" id="nav-ajuda" onclick="goTo('ajuda')">
+    <div class="nav-icon">❓</div>
+    <span class="nav-label">Ajuda</span>
+  </button>
+</nav>
+
+<!-- ══ MODAL: Adicionar Favorito ══ -->
+<div class="modal-overlay" id="modalOverlay" onclick="fecharModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title">Novo lugar favorito</div>
+    <div class="emoji-picker" id="emojiPicker"></div>
+    <div class="form-group">
+      <label class="form-label" for="favNome">Nome do lugar</label>
+      <input class="form-input" id="favNome" type="text" placeholder="Ex: Médico, Mercado..." maxlength="30">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="favEndereco">Endereço completo</label>
+      <input class="form-input" id="favEndereco" type="text" placeholder="Ex: Av. Paulista 1000, SP...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="fecharModal()">Cancelar</button>
+      <button class="btn-modal-save" onclick="salvarFavorito()">✓ Salvar lugar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── STATE ── */
+let appAtual = 'uber';
+let appFav = 'uber';
+let destino = '';
+let isListening = false;
+let isEditing = false;
+let emojiSelecionado = '📍';
+let recognition = null;
+let synth = window.speechSynthesis;
+
+const EMOJIS = ['🏥','🏪','🏠','👨‍👩‍👧','🎓','⛪','🏋️','💊','🛒','🏦','🌳','🍽️','✈️','🚉','📍'];
+
+/* ── STORAGE ── */
+const STORAGE_KEY = 'vozfacil_favoritos';
+let favoritos = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+
+function salvarStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(favoritos));
+}
+
+/* Defaults se vazio */
+if (favoritos.length === 0) {
+  favoritos = [
+    { emoji: '🏥', nome: 'Médico', endereco: 'Hospital das Clínicas, São Paulo' },
+    { emoji: '🏠', nome: 'Casa', endereco: '' },
+    { emoji: '🛒', nome: 'Mercado', endereco: '' },
+  ];
+  salvarStorage();
+}
+
+/* ── NAVEGAÇÃO ── */
+function goTo(tela) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + tela).classList.add('active');
+  document.getElementById('nav-' + tela).classList.add('active');
+  if (tela === 'favoritos') renderFavoritos();
+}
+
+/* ── APP SELECTOR ── */
+function selecionarApp(app) {
+  appAtual = app;
+  document.getElementById('pillUber').className = 'app-pill' + (app === 'uber' ? ' active-uber' : '');
+  document.getElementById('pill99').className = 'app-pill' + (app === '99' ? ' active-99' : '');
+  if (destino) atualizarBotaoChamar();
+}
+
+function selecionarAppFav(app) {
+  appFav = app;
+  document.getElementById('favPillUber').className = 'fav-app-btn' + (app === 'uber' ? ' active-uber' : '');
+  document.getElementById('favPill99').className = 'fav-app-btn' + (app === '99' ? ' active-99' : '');
+}
+
+function atualizarBotaoChamar() {
+  const btn = document.getElementById('btnChamar');
+  if (appAtual === 'uber') {
+    btn.textContent = '🚗 Chamar Uber';
+    btn.className = 'btn-chamar uber';
+  } else {
+    btn.textContent = '🟡 Chamar 99';
+    btn.className = 'btn-chamar noventa-e-nove';
+  }
+}
+
+/* ── RECONHECIMENTO DE VOZ ── */
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognition) {
+  document.getElementById('noSupportBox').style.display = 'block';
+  document.getElementById('micBtn').disabled = true;
+} else {
+  recognition = new SpeechRecognition();
+  recognition.lang = 'pt-BR';
+  recognition.continuous = false;
+  recognition.interimResults = true;
+
+  recognition.onstart = () => {
+    isListening = true;
+    document.getElementById('micBtn').textContent = '⏹️';
+    document.getElementById('micBtn').className = 'mic-btn-inner listening';
+    document.getElementById('micRing').className = 'mic-ring listening';
+    document.getElementById('micStatus').textContent = 'Estou ouvindo...';
+    document.getElementById('micStatus').className = 'mic-status listening';
+    document.getElementById('confirmBubble').className = 'confirm-bubble';
+  };
+
+  recognition.onresult = (e) => {
+    let transcript = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      transcript += e.results[i][0].transcript;
+    }
+    mostrarDestino(transcript);
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    document.getElementById('micBtn').textContent = '🎤';
+    if (destino) {
+      document.getElementById('micBtn').className = 'mic-btn-inner confirmed';
+      document.getElementById('micRing').className = 'mic-ring confirmed';
+      document.getElementById('micStatus').textContent = 'Destino confirmado ✓';
+      document.getElementById('micStatus').className = 'mic-status confirmed';
+      document.getElementById('btnChamar').disabled = false;
+      atualizarBotaoChamar();
+      falarDestino(destino);
+    } else {
+      document.getElementById('micBtn').className = 'mic-btn-inner';
+      document.getElementById('micRing').className = 'mic-ring';
+      document.getElementById('micStatus').textContent = 'Aperte para falar';
+      document.getElementById('micStatus').className = 'mic-status';
+    }
+  };
+
+  recognition.onerror = (e) => {
+    isListening = false;
+    document.getElementById('micBtn').className = 'mic-btn-inner';
+    document.getElementById('micRing').className = 'mic-ring';
+    document.getElementById('micBtn').textContent = '🎤';
+    const msgs = {
+      'no-speech': 'Não ouvi nada — tente de novo',
+      'not-allowed': '⚠️ Permita o uso do microfone!',
+      'audio-capture': '⚠️ Microfone não encontrado'
+    };
+    document.getElementById('micStatus').textContent = msgs[e.error] || 'Erro — tente de novo';
+    document.getElementById('micStatus').className = 'mic-status';
+  };
+}
+
+function toggleListen() {
+  if (!recognition) return;
+  if (isListening) { recognition.stop(); return; }
+  destino = '';
+  mostrarDestinoVazio();
+  recognition.start();
+}
+
+function mostrarDestino(texto) {
+  destino = texto;
+  document.getElementById('destinoPlaceholder').style.display = 'none';
+  const v = document.getElementById('destinoValue');
+  v.style.display = 'block';
+  v.textContent = texto;
+  document.getElementById('destinoBox').className = 'destino-box has-text';
+}
+
+function mostrarDestinoVazio() {
+  destino = '';
+  document.getElementById('destinoPlaceholder').style.display = 'block';
+  document.getElementById('destinoValue').style.display = 'none';
+  document.getElementById('destinoBox').className = 'destino-box';
+  document.getElementById('btnChamar').disabled = true;
+  document.getElementById('confirmBubble').className = 'confirm-bubble';
+}
+
+/* ── CONFIRMAÇÃO POR VOZ ── */
+function falarDestino(texto) {
+  const bubble = document.getElementById('confirmBubble');
+  document.getElementById('confirmText').textContent = '🔊 Destino: "' + texto + '"';
+  bubble.className = 'confirm-bubble show';
+
+  if (synth && synth.speak) {
+    synth.cancel();
+    const utter = new SpeechSynthesisUtterance('Seu destino é: ' + texto);
+    utter.lang = 'pt-BR';
+    utter.rate = 0.9;
+    synth.speak(utter);
+  }
+}
+
+/* ── ABRIR APP ── */
+function abrirApp(enderecoParam) {
+  const end = enderecoParam || destino;
+  if (!end) return;
+  const encoded = encodeURIComponent(end);
+
+  if (appAtual === 'uber' || appFav === 'uber') {
+    const deep = `uber://?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encoded}`;
+    const web = `https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encoded}`;
+    const t = Date.now();
+    window.location.href = deep;
+    setTimeout(() => { if (Date.now() - t < 2200) window.open(web, '_blank'); }, 1600);
+  } else {
+    const web99 = `https://99app.com/link/destination?address=${encoded}`;
+    window.open(web99, '_blank');
+  }
+}
+
+function abrirAppFavorito(endereco) {
+  const appParaUsar = appFav;
+  const appAnterior = appAtual;
+  appAtual = appParaUsar;
+  abrirApp(endereco);
+  appAtual = appAnterior;
+}
+
+function limpar() {
+  mostrarDestinoVazio();
+  document.getElementById('micBtn').className = 'mic-btn-inner';
+  document.getElementById('micRing').className = 'mic-ring';
+  document.getElementById('micStatus').textContent = 'Aperte para falar';
+  document.getElementById('micStatus').className = 'mic-status';
+  if (synth) synth.cancel();
+}
+
+/* ── FAVORITOS ── */
+function renderFavoritos() {
+  const grid = document.getElementById('favGrid');
+  const cards = favoritos.map((f, i) => `
+    <div class="fav-card${isEditing ? ' editing' : ''}" onclick="${f.endereco ? `abrirFav(${i})` : `abrirModal()`}">
+      <button class="fav-delete" onclick="deletarFav(event,${i})">✕</button>
+      <div class="fav-emoji">${f.emoji}</div>
+      <div class="fav-name">${f.nome}</div>
+      ${f.endereco ? `<div class="fav-addr">${f.endereco}</div>` : '<div class="fav-addr" style="color:var(--red)">Toque para editar</div>'}
+    </div>
+  `).join('');
+
+  const addCard = `
+    <div class="fav-card add-card" onclick="abrirModal()">
+      <div class="fav-emoji">＋</div>
+      <div class="fav-name" style="color:var(--ink3)">Adicionar lugar</div>
+    </div>
+  `;
+
+  grid.innerHTML = cards + addCard;
+}
+
+function abrirFav(i) {
+  if (isEditing) return;
+  const f = favoritos[i];
+  if (!f.endereco) { abrirModal(); return; }
+  mostrarDestino(f.endereco);
+  goTo('voz');
+  setTimeout(() => {
+    document.getElementById('btnChamar').disabled = false;
+    atualizarBotaoChamar();
+    falarDestino(f.endereco);
+  }, 100);
+  showToast('Indo para ' + f.nome + '...');
+}
+
+function deletarFav(e, i) {
+  e.stopPropagation();
+  favoritos.splice(i, 1);
+  salvarStorage();
+  renderFavoritos();
+}
+
+function toggleEditing() {
+  isEditing = !isEditing;
+  const btn = document.getElementById('editToggle');
+  btn.textContent = isEditing ? '✓ Concluir edição' : '✏️ Editar favoritos';
+  btn.className = 'edit-toggle' + (isEditing ? ' editing-mode' : '');
+  renderFavoritos();
+}
+
+/* ── MODAL ── */
+function abrirModal() {
+  emojiSelecionado = '📍';
+  document.getElementById('favNome').value = '';
+  document.getElementById('favEndereco').value = '';
+
+  const picker = document.getElementById('emojiPicker');
+  picker.innerHTML = EMOJIS.map(em =>
+    `<button class="emoji-opt${em === emojiSelecionado ? ' selected' : ''}" onclick="selecionarEmoji('${em}',this)">${em}</button>`
+  ).join('');
+
+  document.getElementById('modalOverlay').className = 'modal-overlay open';
+  setTimeout(() => document.getElementById('favNome').focus(), 300);
+}
+
+function fecharModal(e) {
+  if (e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').className = 'modal-overlay';
+}
+
+function selecionarEmoji(em, btn) {
+  emojiSelecionado = em;
+  document.querySelectorAll('.emoji-opt').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function salvarFavorito() {
+  const nome = document.getElementById('favNome').value.trim();
+  const endereco = document.getElementById('favEndereco').value.trim();
+  if (!nome) { document.getElementById('favNome').focus(); return; }
+
+  favoritos.push({ emoji: emojiSelecionado, nome, endereco });
+  salvarStorage();
+  fecharModal();
+  renderFavoritos();
+  showToast('✓ ' + nome + ' salvo!');
+}
+
+/* ── TOAST ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show';
+  setTimeout(() => t.className = 'toast', 2500);
+}
+
+/* ── INIT ── */
+renderFavoritos();
+</script>
+</body>
+</html>
