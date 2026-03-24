@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VozFácil — Assinatura confirmada!</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:#F5F0E8;color:#1A1410;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.card{background:white;border-radius:28px;padding:48px 36px;max-width:480px;width:100%;text-align:center;box-shadow:0 8px 40px rgba(0,0,0,0.08);}
+.check-circle{width:80px;height:80px;border-radius:50%;background:#E8F5EE;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:36px;animation:popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275);}
+@keyframes popIn{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:700;margin-bottom:12px;color:#1A1410;}
+.sub{font-size:16px;color:#6B6560;line-height:1.6;margin-bottom:32px;}
+.steps-box{background:#F5F0E8;border-radius:16px;padding:24px;margin-bottom:28px;text-align:left;}
+.steps-title{font-size:13px;font-weight:800;color:#B0ABA4;text-transform:uppercase;letter-spacing:1px;margin-bottom:16px;}
+.step-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;}
+.step-item:last-child{margin-bottom:0;}
+.step-num{width:28px;height:28px;border-radius:50%;background:#1A7A4A;color:white;font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-text{font-size:14px;color:#1A1410;line-height:1.5;padding-top:4px;}
+.btn{display:block;width:100%;padding:16px;border-radius:40px;background:#1A1410;color:white;font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;text-decoration:none;margin-bottom:12px;transition:opacity 0.15s;}
+.btn:hover{opacity:0.85;}
+.btn-sec{display:block;width:100%;padding:14px;border-radius:40px;background:transparent;border:2px solid rgba(26,20,16,0.15);color:#6B6560;font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;text-decoration:none;transition:background 0.15s;}
+.btn-sec:hover{background:#F5F0E8;}
+.logo{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:#B0ABA4;margin-top:28px;}
+.logo span{color:#1A7A4A;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="check-circle">✓</div>
+  <h1>Tudo certo! Bem-vindo ao VozFácil</h1>
+  <p class="sub">Sua assinatura foi confirmada. Os 14 dias de teste gratuito começaram agora — você não será cobrado até o fim do período.</p>
+
+  <div class="steps-box">
+    <div class="steps-title">Próximos passos</div>
+    <div class="step-item">
+      <div class="step-num">1</div>
+      <div class="step-text"><strong>Acesse seu painel</strong> e copie o link do app para o idoso</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">2</div>
+      <div class="step-text"><strong>Mande o link pelo WhatsApp</strong> para o seu familiar</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">3</div>
+      <div class="step-text"><strong>Peça para ele abrir no celular</strong> e adicionar na tela inicial</div>
+    </div>
+    <div class="step-item">
+      <div class="step-num">4</div>
+      <div class="step-text"><strong>Configure os lugares favoritos</strong> no painel para facilitar ainda mais</div>
+    </div>
+  </div>
+
+  <a class="btn" id="btnPainel" href="painel.html">Ir para o painel →</a>
+  <a class="btn-sec" href="landing.html">Voltar ao início</a>
+
+  <div class="logo">Voz<span>Fácil</span></div>
+</div>
+
+<script>
+// Se vier com familiaId na URL, manda direto para o painel com o ID correto
+const params = new URLSearchParams(window.location.search);
+const familiaId = params.get('familia');
+if (familiaId) {
+  document.getElementById('btnPainel').href = 'painel.html';
+}
+</script>
+</body>
+</html>

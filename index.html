@@ -137,6 +137,22 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--in
 .fav-skeleton { background:var(--surface); border-radius:var(--radius); border:2px solid var(--border); min-height:140px; display:flex; align-items:center; justify-content:center; }
 .skeleton-pulse { width:60%; height:16px; border-radius:8px; background:linear-gradient(90deg,var(--border) 25%,var(--border2) 50%,var(--border) 75%); background-size:200% 100%; animation:shimmer 1.2s infinite; }
 @keyframes shimmer { 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+
+/* ── BLOQUEIO ── */
+#bloqueioScreen { display:none; position:fixed; inset:0; background:var(--bg); z-index:500; flex-direction:column; align-items:center; justify-content:center; padding:32px; text-align:center; }
+.bloqueio-icon { font-size:64px; margin-bottom:20px; }
+.bloqueio-title { font-family:'Baloo 2',sans-serif; font-size:24px; font-weight:800; color:var(--ink); margin-bottom:12px; }
+.bloqueio-sub { font-size:17px; color:var(--ink2); line-height:1.6; margin-bottom:28px; max-width:320px; }
+.btn-bloqueio { padding:16px 32px; border-radius:40px; background:var(--green); color:white; font-family:'Nunito',sans-serif; font-size:17px; font-weight:800; text-decoration:none; display:inline-block; }
+
+/* ── LOCK SCREEN ── */
+.lock-screen{display:none;position:fixed;inset:0;background:#F5F0E8;z-index:500;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;}
+.lock-screen.show{display:flex;}
+.lock-icon{font-size:56px;margin-bottom:20px;}
+.lock-title{font-family:'Baloo 2',sans-serif;font-size:26px;font-weight:800;color:var(--ink);margin-bottom:10px;}
+.lock-sub{font-size:16px;color:var(--ink2);line-height:1.6;margin-bottom:28px;max-width:320px;}
+.btn-lock-assinar{padding:18px 36px;border-radius:40px;background:var(--green);color:white;font-family:'Nunito',sans-serif;font-size:17px;font-weight:800;text-decoration:none;display:inline-block;}
+.lock-trial{font-size:13px;color:var(--ink3);margin-top:12px;}
 </style>
 </head>
 <body>
@@ -259,6 +275,24 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--in
   </div>
 </div>
 
+
+<!-- TELA DE BLOQUEIO -->
+<div id="bloqueioScreen">
+  <div class="bloqueio-icon">🔒</div>
+  <div class="bloqueio-title">Período grátis encerrado</div>
+  <div class="bloqueio-sub">Para continuar usando o VozFácil, o seu familiar precisa assinar o plano mensal.</div>
+  <a class="btn-bloqueio" href="https://ofilipesamuel.github.io/vozfacil/painel.html">Ir para o painel</a>
+</div>
+
+<!-- LOCK SCREEN -->
+<div class="lock-screen" id="lockScreen">
+  <div class="lock-icon">🔒</div>
+  <div class="lock-title">Período de teste encerrado</div>
+  <div class="lock-sub">Os 14 dias gratuitos terminaram. Para continuar usando o VozFácil, o familiar precisa assinar o plano.</div>
+  <a class="btn-lock-assinar" href="painel.html">Assinar agora — R$9,90/mês</a>
+  <div class="lock-trial">Cancele quando quiser. Sem multa.</div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -267,12 +301,12 @@ body { font-family: 'Nunito', sans-serif; background: var(--bg); color: var(--in
 // Substitua pelos seus dados do Firebase Console
 // ══════════════════════════════════════
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAOl5V5ifv7teuNlG7bwDJNbzN1RfFPvXY",
-  authDomain: "vozfacil-d1a98.firebaseapp.com",
-  projectId: "vozfacil-d1a98",
-  storageBucket: "vozfacil-d1a98.firebasestorage.app",
-  messagingSenderId: "592378664644",
-  appId: "1:592378664644:web:9df638a8f4d9501d769b91"
+  apiKey: "COLE_SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO_ID",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 // ID da família — vem da URL: vozfacil.com?familia=abc123
@@ -323,6 +357,7 @@ async function carregarFavoritos() {
           const data = snap.data();
           favoritos = data.favoritos || favoritosDefault();
           setSyncBadge(true);
+          verificarAcesso(data);
         } else {
           // primeira vez — cria doc com defaults
           favoritos = favoritosDefault();
@@ -637,8 +672,67 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', ()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
 
+
+// ── VERIFICAR ACESSO ──
+function verificarAcesso(data) {
+  const ativo = data.assinaturaAtiva === true || data.assinaturaStatus === 'trialing';
+  const agora = new Date();
+  let emTrial = false;
+
+  if (data.trialFim) {
+    const fimTrial = data.trialFim.toDate ? data.trialFim.toDate() : new Date(data.trialFim);
+    emTrial = fimTrial > agora;
+  } else if (data.criadoEm) {
+    const criacao = data.criadoEm.toDate ? data.criadoEm.toDate() : new Date(data.criadoEm);
+    const diasPassados = (agora - criacao) / (1000 * 60 * 60 * 24);
+    emTrial = diasPassados < 14;
+  } else {
+    // Doc sem data de criação — dá acesso por precaução
+    emTrial = true;
+  }
+
+  const temAcesso = ativo || emTrial;
+  if (!temAcesso) {
+    document.getElementById('bloqueioScreen').style.display = 'flex';
+  }
+}
+
 // ── INIT ──
 carregarFavoritos();
+verificarAcesso();
+// ── VERIFICAR TRIAL/ASSINATURA ──
+async function verificarAcesso() {
+  if (FAMILIA_ID === 'demo') return; // modo demo sempre liberado
+  if (!firebaseOk || !famDoc) return;
+  try {
+    const snap = await famDoc.get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    const ativa = data.assinaturaAtiva === true;
+    const status = data.stripeStatus || '';
+    const criadoEm = data.criadoEm?.toDate?.() || null;
+
+    // Se tem assinatura ativa, libera
+    if (ativa && ['active','trialing'].includes(status)) return;
+
+    // Se não tem assinatura ainda, verifica trial de 14 dias desde criação
+    if (!status || status === '') {
+      if (criadoEm) {
+        const diasPassados = (Date.now() - criadoEm.getTime()) / (1000*60*60*24);
+        if (diasPassados < 14) return; // ainda no trial
+      } else {
+        return; // sem data, libera
+      }
+    }
+
+    // Bloqueia
+    document.getElementById('lockScreen').className = 'lock-screen show';
+  } catch(e) {
+    console.warn('Erro ao verificar acesso:', e);
+  }
+}
+
+
 </script>
 </body>
 </html>

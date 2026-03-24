@@ -215,7 +215,7 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
       <!-- Status ativo (oculto por padrão) -->
       <div class="status-ativo" id="statusAtivo" style="display:none">
         <div class="status-dot"></div>
-        <div class="status-text">✓ Assinatura ativa — VozFácil Plano Família</div>
+        <div class="status-text" id="statusTexto">✓ Assinatura ativa — VozFácil Plano Família</div>
       </div>
 
       <!-- Card do plano (aparece quando não tem assinatura) -->
@@ -232,9 +232,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
             <li>Você configura tudo pelo painel</li>
             <li>Cancele quando quiser</li>
           </ul>
-          <a class="btn-assinar" href="https://buy.stripe.com/dRmfZi8VWdZg3GpeygbV600" target="_blank" onclick="marcarAssinatura()">
+          <button class="btn-assinar" onclick="iniciarCheckout()" id="btnAssinar">
             Começar 14 dias grátis
-          </a>
+          </button>
           <div class="plano-trial">Sem cobrança nos primeiros 14 dias. Cancele quando quiser.</div>
         </div>
       </div>
@@ -302,17 +302,20 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--ink);min-h
 // ══ FIREBASE CONFIG ══
 // Cole os mesmos dados do Firebase Console (igual ao app do idoso)
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyAOl5V5ifv7teuNlG7bwDJNbzN1RfFPvXY",
-  authDomain: "vozfacil-d1a98.firebaseapp.com",
-  projectId: "vozfacil-d1a98",
-  storageBucket: "vozfacil-d1a98.firebasestorage.app",
-  messagingSenderId: "592378664644",
-  appId: "1:592378664644:web:9df638a8f4d9501d769b91"
+  apiKey: "COLE_SUA_API_KEY_AQUI",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  projectId: "SEU_PROJETO_ID",
+  storageBucket: "SEU_PROJETO.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };
 
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db = firebase.firestore();
+
+// URL do backend Railway — atualize após o deploy
+const BACKEND_URL = 'https://vozfacil-backend.up.railway.app';
 
 const EMOJIS = ['🏥','🏪','🏠','👨‍👩‍👧','🎓','⛪','🏋️','💊','🛒','🏦','🌳','🍽️','✈️','🚉','📍'];
 let emojiSel = '📍';
@@ -558,19 +561,84 @@ async function salvarFavPainel() {
 }
 
 // ── ASSINATURA ──
-// Marca no Firestore que o familiar clicou em assinar
-async function marcarAssinatura() {
-  if (!famDocRef) return;
+const BACKEND_URL = 'https://vozfacil-backend.up.railway.app';
+
+async function iniciarCheckout() {
+  const btn = document.getElementById('btnAssinar');
+  btn.textContent = 'Aguarde...';
+  btn.disabled = true;
+
   try {
-    await famDocRef.update({ assinaturaIniciada: true, assinaturaData: firebase.firestore.FieldValue.serverTimestamp() });
-  } catch(e) {}
+    const user = firebase.auth().currentUser;
+    const res = await fetch(`${BACKEND_URL}/criar-checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ familiaId, email: user.email })
+    });
+    const data = await res.json();
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert('Erro ao iniciar pagamento. Tente novamente.');
+      btn.textContent = 'Começar 14 dias grátis';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    alert('Erro ao conectar com o servidor. Tente novamente.');
+    btn.textContent = 'Começar 14 dias grátis';
+    btn.disabled = false;
+  }
 }
 
 function verificarAssinatura(data) {
-  const ativo = data.assinaturaAtiva === true;
-  const iniciada = data.assinaturaIniciada === true;
-  document.getElementById('statusAtivo').style.display = ativo ? 'flex' : 'none';
-  document.getElementById('cardPlano').style.display = ativo ? 'none' : 'block';
+  const ativo = data.assinaturaAtiva === true || data.assinaturaStatus === 'trialing';
+
+  // Verifica se está em trial
+  const agora = new Date();
+  let emTrial = false;
+  if (data.trialFim) {
+    const fimTrial = data.trialFim.toDate ? data.trialFim.toDate() : new Date(data.trialFim);
+    emTrial = fimTrial > agora;
+  } else if (data.criadoEm) {
+    // Se nunca teve Stripe, usa 14 dias desde criação como trial
+    const criacao = data.criadoEm.toDate ? data.criadoEm.toDate() : new Date(data.criadoEm);
+    const diasPassados = (agora - criacao) / (1000 * 60 * 60 * 24);
+    emTrial = diasPassados < 14;
+  }
+
+  const temAcesso = ativo || emTrial;
+
+  // Status badge
+  const statusAtivo = document.getElementById('statusAtivo');
+  const cardPlano = document.getElementById('cardPlano');
+  const statusTexto = document.getElementById('statusTexto');
+
+  if (ativo && !emTrial) {
+    statusAtivo.style.display = 'flex';
+    statusAtivo.style.background = 'var(--green-light)';
+    statusTexto.textContent = '✓ Assinatura ativa — VozFácil Plano Família';
+    statusTexto.style.color = 'var(--green)';
+    cardPlano.style.display = 'none';
+  } else if (emTrial) {
+    statusAtivo.style.display = 'flex';
+    statusAtivo.style.background = 'var(--amber-light)';
+    // Calcula dias restantes
+    let diasRestantes = 14;
+    if (data.trialFim) {
+      const fimTrial = data.trialFim.toDate ? data.trialFim.toDate() : new Date(data.trialFim);
+      diasRestantes = Math.max(0, Math.ceil((fimTrial - agora) / (1000 * 60 * 60 * 24)));
+    } else if (data.criadoEm) {
+      const criacao = data.criadoEm.toDate ? data.criadoEm.toDate() : new Date(data.criadoEm);
+      const diasPassados = Math.floor((agora - criacao) / (1000 * 60 * 60 * 24));
+      diasRestantes = Math.max(0, 14 - diasPassados);
+    }
+    statusTexto.textContent = `⏳ Período grátis — ${diasRestantes} dia${diasRestantes !== 1 ? 's' : ''} restante${diasRestantes !== 1 ? 's' : ''}`;
+    statusTexto.style.color = 'var(--amber)';
+    cardPlano.style.display = 'block';
+  } else {
+    statusAtivo.style.display = 'none';
+    cardPlano.style.display = 'block';
+  }
 }
 </script>
 </body>
